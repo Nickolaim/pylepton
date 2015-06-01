@@ -3,6 +3,7 @@
 import sys
 import numpy as np
 import cv2
+from datetime import datetime
 from pylepton import Lepton
 
 def capture(flip_v = False, device = "/dev/spidev0.0"):
@@ -30,9 +31,12 @@ if __name__ == '__main__':
 
   (options, args) = parser.parse_args()
 
-  if len(args) < 1:
-    print "You must specify an output filename"
-    sys.exit(1)
+  cv2.namedWindow("image", cv2.WINDOW_NORMAL)
 
-  image = capture(flip_v = options.flip_v, device = options.device)
-  cv2.imwrite(args[0], image)
+  while True:
+    image = capture(flip_v = options.flip_v, device = options.device)
+    cv2.imshow("image", image)      
+    cv2.waitKey(10)
+
+  cv2.destroyAllWindows()
+  
