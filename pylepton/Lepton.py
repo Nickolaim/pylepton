@@ -94,19 +94,31 @@ class Lepton(object):
     elif data_buffer.ndim < 2 or data_buffer.shape[0] < Lepton.ROWS or data_buffer.shape[1] < Lepton.COLS or data_buffer.itemsize < 2:
       raise Exception("Provided input array not large enough")
 
-    rxs = self.__capture_buf.ctypes.data
-    rxs_end = rxs + Lepton.ROWS * Lepton.VOSPI_FRAME_SIZE_BYTES
-    txs = self.__txbuf.ctypes.data
-    synced = False
-    while rxs < rxs_end:
-      self.__xmit_struct.pack_into(self.__xmit_buf, 0, txs, rxs, Lepton.VOSPI_FRAME_SIZE_BYTES, Lepton.SPEED, 0, Lepton.BITS, 0, Lepton.BITS, Lepton.BITS, 0)
-      ioctl(self.__handle, self.__msg, self.__xmit_buf)
-      if synced or self.__capture_buf[0,0] & 0x0f00 != 0x0f00:
-        synced = True
-        rxs += Lepton.VOSPI_FRAME_SIZE_BYTES
+    isGoodFrame = False
+    while (isGoodFrame == False):
+      rxs = self.__capture_buf.ctypes.data
+      rxs_end = rxs + Lepton.ROWS * Lepton.VOSPI_FRAME_SIZE_BYTES
+      txs = self.__txbuf.ctypes.data
+      synced = False
+      while rxs < rxs_end:
+        self.__xmit_struct.pack_into(self.__xmit_buf, 0, txs, rxs, Lepton.VOSPI_FRAME_SIZE_BYTES, Lepton.SPEED, 0, Lepton.BITS, 0, Lepton.BITS, Lepton.BITS, 0)
+        ioctl(self.__handle, self.__msg, self.__xmit_buf)
+        if synced or self.__capture_buf[0,0] & 0x0f00 != 0x0f00:
+          synced = True
+          rxs += Lepton.VOSPI_FRAME_SIZE_BYTES
 
-    data_buffer[0:Lepton.ROWS,0:Lepton.COLS] = self.__capture_buf[0:Lepton.ROWS,2:Lepton.VOSPI_FRAME_SIZE]
-    data_buffer.byteswap(True)
+      data_buffer[0:Lepton.ROWS,0:Lepton.COLS] = self.__capture_buf[0:Lepton.ROWS,2:Lepton.VOSPI_FRAME_SIZE]
+      data_buffer.byteswap(True)
+
+      # Determine 'bad buffers'.  Count 0.  Is it a good approach?!
+      count0 = 0
+      for row in range(0, Lepton.ROWS):
+        for frame in range(0, Lepton.COLS):
+          if data_buffer[row, frame] == 0:
+            count0 += 1
+
+      if(count0 < 1000):
+        isGoodFrame = True
 
     # TODO: turn on telemetry to get real frame id, sum on this array is fast enough though (< 500us)
     return data_buffer, data_buffer.sum()
