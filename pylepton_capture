@@ -6,6 +6,10 @@ import cv2
 from datetime import datetime
 from pylepton import Lepton
 
+# Constants taken from https://github.com/Itseez/opencv/blob/7d4d28605087ec2d3878f9467aea313a2acdfd49/modules/highgui/include/opencv2/highgui/highgui_c.h
+CV_WND_PROP_FULLSCREEN = 0
+CV_WINDOW_FULLSCREEN = 1
+
 def capture(flip_v = False, device = "/dev/spidev0.0"):
   with Lepton(device) as l:
     a,_ = l.capture()
@@ -18,7 +22,7 @@ def capture(flip_v = False, device = "/dev/spidev0.0"):
 if __name__ == '__main__':
   from optparse import OptionParser
 
-  usage = "usage: %prog [options] output_file[.format]"
+  usage = "usage: %prog [options]"
   parser = OptionParser(usage=usage)
 
   parser.add_option("-f", "--flip-vertical",
@@ -29,9 +33,15 @@ if __name__ == '__main__':
                     dest="device", default="/dev/spidev0.0",
                     help="specify the spi device node (might be /dev/spidev0.1 on a newer device)")
 
+  parser.add_option("-s", "--full-screen",
+                    action="store_true", dest="full_screen", default=False,
+                    help="run in full screen mode")
+
   (options, args) = parser.parse_args()
 
   cv2.namedWindow("image", cv2.WINDOW_NORMAL)
+  if options.full_screen:
+    cv2.setWindowProperty("image", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN)
 
   while True:
     image = capture(flip_v = options.flip_v, device = options.device)
