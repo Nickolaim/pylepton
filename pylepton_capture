@@ -3,7 +3,7 @@
 import sys
 import numpy as np
 import cv2
-from datetime import datetime
+import ImageConverter
 from pylepton import Lepton
 
 # Constants taken from https://github.com/Itseez/opencv/blob/7d4d28605087ec2d3878f9467aea313a2acdfd49/modules/highgui/include/opencv2/highgui/highgui_c.h
@@ -17,7 +17,8 @@ def capture(flip_v = False, device = "/dev/spidev0.0"):
     cv2.flip(a,0,a)
   cv2.normalize(a, a, 0, 65535, cv2.NORM_MINMAX)
   np.right_shift(a, 8, a)
-  return np.uint8(a)
+  result = ImageConverter.ConvertImage(np.uint8(a))
+  return result
 
 if __name__ == '__main__':
   from optparse import OptionParser
@@ -45,7 +46,7 @@ if __name__ == '__main__':
 
   while True:
     image = capture(flip_v = options.flip_v, device = options.device)
-    cv2.imshow("image", image)      
+    cv2.imshow("image", image)
     cv2.waitKey(10)
 
   cv2.destroyAllWindows()
